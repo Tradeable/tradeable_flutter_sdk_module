@@ -16,7 +16,10 @@ class ViewState extends ChangeNotifier {
     topicId = data['topicId'] ?? topicId;
     final dynamic rawPageId = data['pageId'] ?? data['pageID'];
     if (rawPageId != null) {
-      pageId = rawPageId is int ? rawPageId : int.tryParse(rawPageId.toString()) ?? pageId;
+      pageId =
+          rawPageId is int
+              ? rawPageId
+              : int.tryParse(rawPageId.toString()) ?? pageId;
     }
     notifyListeners();
   }
