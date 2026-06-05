@@ -97,7 +97,8 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
     if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
     } else {
-      FlutterBridge.base.invokeMethod('closeCard');
+      final isFullscreen = FlutterBridge().navHandler.state.mode == 'fullscreen';
+      FlutterBridge.base.invokeMethod(isFullscreen ? 'closeFullscreen' : 'closeCard');
     }
   }
 

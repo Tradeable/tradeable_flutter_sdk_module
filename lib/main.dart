@@ -21,6 +21,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   bool _isSideDrawerOpen = false;
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
 
   bool _isSideDrawerMode(String mode) {
     final normalized = mode.toLowerCase();
@@ -39,7 +40,7 @@ class _MyAppState extends State<MyApp> {
     return null;
   }
 
-  void _openSideDrawerIfNeeded(BuildContext context, ViewState state) {
+  void _openSideDrawerIfNeeded(ViewState state) {
     if (!_isSideDrawerMode(state.mode) || _isSideDrawerOpen) return;
 
     final tagId = _resolveTagId(state.pageId);
@@ -47,13 +48,19 @@ class _MyAppState extends State<MyApp> {
 
     _isSideDrawerOpen = true;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final navContext = _navigatorKey.currentContext;
+      if (navContext == null) {
+        _isSideDrawerOpen = false;
+        return;
+      }
+
       await TradeableRightSideDrawer.open(
-        context: context,
+        context: navContext,
         drawerBorderRadius: 24,
         body: TopicListPage(
           tagId: tagId,
           onClose: () {
-            Navigator.of(context).pop();
+            _navigatorKey.currentState?.maybePop();
           },
         ),
       );
@@ -72,9 +79,10 @@ class _MyAppState extends State<MyApp> {
     return AnimatedBuilder(
       animation: state,
       builder: (_, __) {
-        _openSideDrawerIfNeeded(context, state);
+        _openSideDrawerIfNeeded(state);
 
         return MaterialApp(
+          navigatorKey: _navigatorKey,
           home: Scaffold(
             backgroundColor:
                 state.mode == 'fullscreen' ? Colors.white : Colors.transparent,
