@@ -235,7 +235,13 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
               );
             },
             child: SvgPicture.asset(
-              "packages/tradeable_flutter_sdk/lib/assets/images/dashboard_menu.svg",
+              'lib/assets/images/dashboard_menu.svg',
+              package: 'tradeable_flutter_sdk',
+              placeholderBuilder: (_) => const Icon(
+                Icons.menu,
+                size: 18,
+                color: Colors.black,
+              ),
             ),
           ),
         ),

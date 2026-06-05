@@ -3,7 +3,6 @@ import 'package:tradeable_flutter_sdk/src/ioswrapper/flutter_bridge.dart';
 import 'package:tradeable_flutter_sdk/src/ioswrapper/view_state.dart';
 import 'package:tradeable_flutter_sdk/src/models/enums/page_types.dart';
 import 'package:tradeable_flutter_sdk/src/ui/pages/topic_list_page.dart';
-import 'package:tradeable_flutter_sdk/src/ui/widgets/tradeable_right_side_drawer.dart';
 import 'package:tradeable_flutter_sdk/tradeable_flutter_sdk.dart';
 
 void main() {
@@ -20,8 +19,10 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  bool _isSideDrawerOpen = false;
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  final GlobalKey<ScaffoldState> _sideDrawerScaffoldKey =
+      GlobalKey<ScaffoldState>();
+  bool _isDrawerOpening = false;
 
   bool _isSideDrawerMode(String mode) {
     final normalized = mode.toLowerCase();
@@ -40,35 +41,15 @@ class _MyAppState extends State<MyApp> {
     return null;
   }
 
-  void _openSideDrawerIfNeeded(ViewState state) {
-    if (!_isSideDrawerMode(state.mode) || _isSideDrawerOpen) return;
+  void _openRealEndDrawerIfNeeded(ViewState state) {
+    if (!_isSideDrawerMode(state.mode) || _isDrawerOpening) return;
 
-    final tagId = _resolveTagId(state.pageId);
-    if (tagId == null) return;
-
-    _isSideDrawerOpen = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final navContext = _navigatorKey.currentContext;
-      if (navContext == null) {
-        _isSideDrawerOpen = false;
-        return;
-      }
-
-      await TradeableRightSideDrawer.open(
-        context: navContext,
-        drawerBorderRadius: 24,
-        body: TopicListPage(
-          tagId: tagId,
-          onClose: () {
-            _navigatorKey.currentState?.maybePop();
-          },
-        ),
-      );
-
-      if (!mounted) return;
-
-      _isSideDrawerOpen = false;
-      state.update({'mode': 'direct'});
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final scaffold = _sideDrawerScaffoldKey.currentState;
+      if (scaffold == null || scaffold.isEndDrawerOpen) return;
+      _isDrawerOpening = true;
+      scaffold.openEndDrawer();
+      _isDrawerOpening = false;
     });
   }
 
@@ -79,7 +60,7 @@ class _MyAppState extends State<MyApp> {
     return AnimatedBuilder(
       animation: state,
       builder: (_, __) {
-        _openSideDrawerIfNeeded(state);
+        _openRealEndDrawerIfNeeded(state);
 
         return MaterialApp(
           navigatorKey: _navigatorKey,
@@ -97,7 +78,7 @@ class _MyAppState extends State<MyApp> {
     switch (state.mode) {
       case 'sidedrawer':
       case 'tradeablesidedrawer':
-        return const SizedBox.shrink();
+        return _realSideDrawer(state);
       case 'direct':
         return _direct(state);
       case 'card':
@@ -110,6 +91,34 @@ class _MyAppState extends State<MyApp> {
       default:
         return _direct(state);
     }
+  }
+
+  Widget _realSideDrawer(ViewState state) {
+    final tagId = _resolveTagId(state.pageId);
+
+    return Scaffold(
+      key: _sideDrawerScaffoldKey,
+      backgroundColor: Colors.transparent,
+      onEndDrawerChanged: (isOpened) {
+        if (!isOpened && _isSideDrawerMode(state.mode)) {
+          state.update({'mode': 'direct'});
+        }
+      },
+      body: _direct(state),
+      endDrawer: Drawer(
+        width: MediaQuery.of(context).size.width - 32,
+        child: SafeArea(
+          child: tagId != null
+              ? TopicListPage(
+                  tagId: tagId,
+                  onClose: () {
+                    _sideDrawerScaffoldKey.currentState?.closeEndDrawer();
+                  },
+                )
+              : const Center(child: Text('Please provide pageId')),
+        ),
+      ),
+    );
   }
 
   Widget _direct(ViewState s) {
