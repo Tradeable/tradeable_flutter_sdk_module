@@ -76,6 +76,8 @@ class _MyAppState extends State<MyApp> {
 
   Widget _build(ViewState state) {
     switch (state.mode) {
+      case 'nativeSideDrawer':
+        return _nativeSideDrawerContent(state);
       case 'sidedrawer':
       case 'tradeablesidedrawer':
         return _realSideDrawer(state);
@@ -91,6 +93,23 @@ class _MyAppState extends State<MyApp> {
       default:
         return _direct(state);
     }
+  }
+
+  Widget _nativeSideDrawerContent(ViewState state) {
+    final tagId = _resolveTagId(state.pageId);
+    if (tagId == null) {
+      return const Center(child: Text('Please provide pageId'));
+    }
+
+    return SafeArea(
+      child: TopicListPage(
+        tagId: tagId,
+        showBottomButton: false,
+        onClose: () {
+          FlutterBridge.base.invokeMethod('closeSideDrawer');
+        },
+      ),
+    );
   }
 
   Widget _realSideDrawer(ViewState state) {
