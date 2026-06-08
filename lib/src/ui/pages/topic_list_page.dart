@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tradeable_flutter_sdk/src/ioswrapper/flutter_bridge.dart';
 import 'package:tradeable_flutter_sdk/src/models/topic_user_model.dart';
 import 'package:tradeable_flutter_sdk/src/ui/widgets/topic_tile.dart';
 import 'package:tradeable_flutter_sdk/src/ui/widgets/module_card_shimmer.dart';
@@ -10,11 +11,12 @@ class TopicListPage extends StatefulWidget {
   final int? tagId;
   final bool showBottomButton;
 
-  const TopicListPage(
-      {super.key,
-      required this.onClose,
-      required this.tagId,
-      this.showBottomButton = true});
+  const TopicListPage({
+    super.key,
+    required this.onClose,
+    required this.tagId,
+    this.showBottomButton = true,
+  });
 
   @override
   State<TopicListPage> createState() => _TopicListPageState();
@@ -25,6 +27,25 @@ class _TopicListPageState extends State<TopicListPage> {
   List<TopicUserModel>? topicUserModel;
   List<TopicUserModel> relatedTopics = [];
 
+  bool get _shouldOpenInNativeHost {
+    return FlutterBridge().navHandler.state.mode == 'nativeSideDrawer';
+  }
+
+  Future<void> _openTopicInHost(TopicUserModel topic) {
+    return FlutterBridge.nav.invokeMethod('sendData', {
+      'action': 'openTopic',
+      'topicId': topic.topicId,
+      'title': topic.name,
+    });
+  }
+
+  Future<void> _openDashboardInHost() {
+    return FlutterBridge.nav.invokeMethod('sendData', {
+      'action': 'openDashboard',
+      'title': 'Learn Dashboard',
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -32,9 +53,11 @@ class _TopicListPageState extends State<TopicListPage> {
       fetchTopics(widget.tagId!).then((v) {
         fetchRelatedTopics(widget.tagId!).then((val) {
           setState(() {
-            relatedTopics = {
-              for (TopicUserModel topic in relatedTopics) topic.topicId: topic
-            }.values.toList();
+            relatedTopics =
+                {
+                  for (TopicUserModel topic in relatedTopics)
+                    topic.topicId: topic,
+                }.values.toList();
           });
         });
       });
@@ -45,17 +68,21 @@ class _TopicListPageState extends State<TopicListPage> {
     if (widget.tagId == null) return;
     await API().fetchTopicByTagId(tagId).then((data) {
       setState(() {
-        topicUserModel = data
-            .map((e) => TopicUserModel(
-                topicId: e.id,
-                name: e.name,
-                description: e.description,
-                logo: e.logo,
-                progress: e.progress,
-                startFlow: e.startFlow,
-                topicContextType: TopicContextType.tag,
-                topicContextId: widget.tagId!))
-            .toList();
+        topicUserModel =
+            data
+                .map(
+                  (e) => TopicUserModel(
+                    topicId: e.id,
+                    name: e.name,
+                    description: e.description,
+                    logo: e.logo,
+                    progress: e.progress,
+                    startFlow: e.startFlow,
+                    topicContextType: TopicContextType.tag,
+                    topicContextId: widget.tagId!,
+                  ),
+                )
+                .toList();
         _showShimmer = false;
       });
     });
@@ -63,11 +90,12 @@ class _TopicListPageState extends State<TopicListPage> {
 
   Future<void> fetchRelatedTopics(int tagId) async {
     for (int i = 0; i < (topicUserModel ?? []).length; i++) {
-      await API()
-          .fetchRelatedTopics(tagId, topicUserModel![i].topicId)
-          .then((e) {
+      await API().fetchRelatedTopics(tagId, topicUserModel![i].topicId).then((
+        e,
+      ) {
         for (int i = 0; i < e.length; i++) {
-          relatedTopics.add(TopicUserModel(
+          relatedTopics.add(
+            TopicUserModel(
               topicId: e[i].id,
               name: e[i].name,
               description: e[i].description,
@@ -75,7 +103,9 @@ class _TopicListPageState extends State<TopicListPage> {
               progress: e[i].progress,
               startFlow: e[i].startFlow,
               topicContextType: TopicContextType.tag,
-              topicContextId: tagId));
+              topicContextId: tagId,
+            ),
+          );
         }
       });
     }
@@ -100,10 +130,7 @@ class _TopicListPageState extends State<TopicListPage> {
                 ),
                 const Text(
                   "What do you want to learn about today?",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 16),
               ],
@@ -118,69 +145,83 @@ class _TopicListPageState extends State<TopicListPage> {
                   if (_showShimmer)
                     Column(
                       children: List.generate(
-                          3,
-                          (index) => const Padding(
-                                padding: EdgeInsets.only(bottom: 16.0),
-                                child: ModuleCardShimmer(),
-                              )),
+                        3,
+                        (index) => const Padding(
+                          padding: EdgeInsets.only(bottom: 16.0),
+                          child: ModuleCardShimmer(),
+                        ),
+                      ),
                     )
                   else if (topicUserModel != null)
                     Column(
-                      children: topicUserModel!.asMap().entries.map((entry) {
-                        final index = entry.key;
-                        final item = entry.value;
-                        final cardColors = [
-                          Color(0xffF9EBEF),
-                          Color(0xffEBF0F9),
-                          Color(0xffF9F1EB),
-                          Color(0xffEFF9EB)
-                        ];
-                        final cardColor = cardColors[index % cardColors.length];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 16.0),
-                          child: TopicTile(
-                            moduleModel: item,
-                            onClick: () async {
-                              TFS().onEvent(
-                                  eventName: AppEvents.beginTopic,
-                                  data: {
-                                    "comingFrom": "sideDrawer",
-                                    "title": item.name,
-                                    "total":
-                                        "${item.progress.completed}/${item.progress.total}"
-                                  });
-                              await Navigator.of(context)
-                                  .push(MaterialPageRoute(
-                                      builder: (context) => TopicDetailPage(
-                                          topic: item.copyWith(
-                                              cardColor: cardColor))))
-                                  .then((val) {
-                                setState(() {
-                                  _showShimmer = true;
-                                  topicUserModel = null;
-                                  relatedTopics = [];
-                                  fetchTopics(widget.tagId!);
-                                });
-                              });
-                            },
-                            cardColor: cardColor,
-                          ),
-                        );
-                      }).toList(),
+                      children:
+                          topicUserModel!.asMap().entries.map((entry) {
+                            final index = entry.key;
+                            final item = entry.value;
+                            final cardColors = [
+                              Color(0xffF9EBEF),
+                              Color(0xffEBF0F9),
+                              Color(0xffF9F1EB),
+                              Color(0xffEFF9EB),
+                            ];
+                            final cardColor =
+                                cardColors[index % cardColors.length];
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 16.0),
+                              child: TopicTile(
+                                moduleModel: item,
+                                onClick: () async {
+                                  TFS().onEvent(
+                                    eventName: AppEvents.beginTopic,
+                                    data: {
+                                      "comingFrom": "sideDrawer",
+                                      "title": item.name,
+                                      "total":
+                                          "${item.progress.completed}/${item.progress.total}",
+                                    },
+                                  );
+                                  if (_shouldOpenInNativeHost) {
+                                    await _openTopicInHost(item);
+                                    return;
+                                  }
+                                  await Navigator.of(context)
+                                      .push(
+                                        MaterialPageRoute(
+                                          builder:
+                                              (context) => TopicDetailPage(
+                                                topic: item.copyWith(
+                                                  cardColor: cardColor,
+                                                ),
+                                              ),
+                                        ),
+                                      )
+                                      .then((val) {
+                                        setState(() {
+                                          _showShimmer = true;
+                                          topicUserModel = null;
+                                          relatedTopics = [];
+                                          fetchTopics(widget.tagId!);
+                                        });
+                                      });
+                                },
+                                cardColor: cardColor,
+                              ),
+                            );
+                          }).toList(),
                     ),
                   const SizedBox(height: 20),
                   ...relatedTopics.isEmpty
                       ? []
                       : [
-                          const Text(
-                            'Other related topics',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                            ),
+                        const Text(
+                          'Other related topics',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
                           ),
-                          const SizedBox(height: 12),
-                        ],
+                        ),
+                        const SizedBox(height: 12),
+                      ],
                   Padding(
                     padding: const EdgeInsets.all(4),
                     child: buildOtherRelatedTopics(),
@@ -190,7 +231,7 @@ class _TopicListPageState extends State<TopicListPage> {
               ),
             ),
           ),
-          widget.showBottomButton ? buildGoToDashboardButton() : Container()
+          widget.showBottomButton ? buildGoToDashboardButton() : Container(),
         ],
       ),
     );
@@ -199,26 +240,36 @@ class _TopicListPageState extends State<TopicListPage> {
   Widget buildOtherRelatedTopics() {
     return Column(
       children: List.generate(
-          relatedTopics.length,
-          (index) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: InkWell(
-                  onTap: () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                        builder: (context) =>
-                            TopicDetailPage(topic: relatedTopics[index])));
-                  },
-                  child: Row(
-                    children: [
-                      Text(relatedTopics[index].name,
-                          style: TextStyle(fontSize: 14)),
-                      const SizedBox(width: 6),
-                      Icon(Icons.arrow_forward_ios_rounded,
-                          size: 14, color: Colors.black)
-                    ],
-                  ),
+        relatedTopics.length,
+        (index) => Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: InkWell(
+            onTap: () {
+              if (_shouldOpenInNativeHost) {
+                _openTopicInHost(relatedTopics[index]);
+                return;
+              }
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder:
+                      (context) => TopicDetailPage(topic: relatedTopics[index]),
                 ),
-              )),
+              );
+            },
+            child: Row(
+              children: [
+                Text(relatedTopics[index].name, style: TextStyle(fontSize: 14)),
+                const SizedBox(width: 6),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 14,
+                  color: Colors.black,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -227,17 +278,19 @@ class _TopicListPageState extends State<TopicListPage> {
       width: double.infinity,
       height: 50,
       decoration: BoxDecoration(
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(10),
-        ),
+        borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(10)),
         color: const Color(0xffF9F9F9),
         border: Border.all(color: const Color(0xffE2E2E2)),
       ),
       child: InkWell(
         onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (context) => LearnDashboard()),
-          );
+          if (_shouldOpenInNativeHost) {
+            _openDashboardInHost();
+            return;
+          }
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (context) => LearnDashboard()));
         },
         child: const Center(
           child: Text(

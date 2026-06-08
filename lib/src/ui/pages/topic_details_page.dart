@@ -1,6 +1,5 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:tradeable_flutter_sdk/src/ioswrapper/flutter_bridge.dart';
 import 'package:tradeable_flutter_sdk/src/models/topic_user_model.dart';
 import 'package:tradeable_flutter_sdk/src/models/user_widgets_model.dart';
@@ -52,15 +51,25 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
     setState(() {
       _loading = true;
     });
+
     final topic = await API().fetchTopicById(
       widget.topicId!,
       moduleId: widget.courseId,
     );
-    _topicUserModel = TopicUserModel.fromTopic(topic);
-    flowId = _topicUserModel!.startFlow;
+
+    final topicUserModel = TopicUserModel.fromTopic(topic);
+
+    setState(() {
+      _topicUserModel = topicUserModel;
+      flowId = topicUserModel.startFlow;
+      completedFlows = topicUserModel.progress.completed;
+      totalFlows = topicUserModel.progress.total;
+    });
+
     if (flowId == null) {
       await getFlows();
     }
+
     setState(() {
       _loading = false;
     });
@@ -97,8 +106,11 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
     if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
     } else {
-      final isFullscreen = FlutterBridge().navHandler.state.mode == 'fullscreen';
-      FlutterBridge.base.invokeMethod(isFullscreen ? 'closeFullscreen' : 'closeCard');
+      final isFullscreen =
+          FlutterBridge().navHandler.state.mode == 'fullscreen';
+      FlutterBridge.base.invokeMethod(
+        isFullscreen ? 'closeFullscreen' : 'closeCard',
+      );
     }
   }
 
@@ -234,15 +246,7 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
                 },
               );
             },
-            child: SvgPicture.asset(
-              'lib/assets/images/dashboard_menu.svg',
-              package: 'tradeable_flutter_sdk',
-              placeholderBuilder: (_) => const Icon(
-                Icons.menu,
-                size: 18,
-                color: Colors.black,
-              ),
-            ),
+            child: const Icon(Icons.menu, size: 18, color: Colors.black),
           ),
         ),
       ],
