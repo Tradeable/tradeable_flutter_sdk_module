@@ -10,7 +10,9 @@ import 'package:tradeable_flutter_sdk/src/ui/widgets/dashboard/topic_tag_widget.
 import 'package:tradeable_flutter_sdk/src/utils/app_theme.dart';
 
 class LearnDashboard extends StatefulWidget {
-  const LearnDashboard({super.key});
+  final VoidCallback? onBack;
+
+  const LearnDashboard({super.key, this.onBack});
 
   @override
   State<StatefulWidget> createState() => _LearnDashboard();
@@ -51,8 +53,11 @@ class _LearnDashboard extends State<LearnDashboard> {
 
     return Scaffold(
       backgroundColor: colors.background,
-      appBar:
-          AppBarWidget(title: "Learn Dashboard", color: colors.neutralColor),
+      appBar: AppBarWidget(
+        title: "Learn Dashboard",
+        color: colors.neutralColor,
+        onBack: widget.onBack,
+      ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -64,14 +69,15 @@ class _LearnDashboard extends State<LearnDashboard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   OverallProgressWidget(
-                      coursesModel: courses.isNotEmpty ? courses[0] : null),
+                    coursesModel: courses.isNotEmpty ? courses[0] : null,
+                  ),
                   const SizedBox(height: 20),
                   CoursesHorizontalList(courses: courses),
                   const SizedBox(height: 20),
                   TopicTagWidget(),
                 ],
               ),
-            )
+            ),
             //WebinarsList()
           ],
         ),
@@ -91,50 +97,62 @@ class _LearnDashboard extends State<LearnDashboard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Welcome!",
-              style: textStyles.mediumBold.copyWith(
-                  fontStyle: FontStyle.italic, color: colors.primary)),
-          Text("Ready to learn the ropes? Your trading adventure begins now!",
-              style: textStyles.smallNormal
-                  .copyWith(color: colors.textColorSecondary)),
+          Text(
+            "Welcome!",
+            style: textStyles.mediumBold.copyWith(
+              fontStyle: FontStyle.italic,
+              color: colors.primary,
+            ),
+          ),
+          Text(
+            "Ready to learn the ropes? Your trading adventure begins now!",
+            style: textStyles.smallNormal.copyWith(
+              color: colors.textColorSecondary,
+            ),
+          ),
           const SizedBox(height: 24),
           banners.isNotEmpty
               ? Column(
-                  children: [
-                    Container(
-                      height: 120,
-                      decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(14)),
-                      child: ClipRRect(
-                          borderRadius: BorderRadius.circular(14),
-                          child: PageView(
-                            controller: _controller,
-                            children: banners.map((url) {
+                children: [
+                  Container(
+                    height: 120,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: PageView(
+                        controller: _controller,
+                        children:
+                            banners.map((url) {
                               return Image.network(
                                 url,
                                 fit: BoxFit.fill,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    const Icon(Icons.broken_image),
+                                errorBuilder:
+                                    (context, error, stackTrace) =>
+                                        const Icon(Icons.broken_image),
                               );
                             }).toList(),
-                          )),
-                    ),
-                    const SizedBox(height: 16),
-                    Center(
-                      child: SmoothPageIndicator(
-                        controller: _controller,
-                        count: banners.length,
-                        effect: ExpandingDotsEffect(
-                            activeDotColor: colors.sliderColor,
-                            dotHeight: 6,
-                            dotWidth: 6,
-                            spacing: 4,
-                            dotColor: colors.borderColorSecondary),
                       ),
                     ),
-                  ],
-                )
-              : Container()
+                  ),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: SmoothPageIndicator(
+                      controller: _controller,
+                      count: banners.length,
+                      effect: ExpandingDotsEffect(
+                        activeDotColor: colors.sliderColor,
+                        dotHeight: 6,
+                        dotWidth: 6,
+                        spacing: 4,
+                        dotColor: colors.borderColorSecondary,
+                      ),
+                    ),
+                  ),
+                ],
+              )
+              : Container(),
         ],
       ),
     );

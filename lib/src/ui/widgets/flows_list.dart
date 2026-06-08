@@ -16,11 +16,12 @@ class FlowsList extends StatefulWidget {
   final Function(int) onFlowSelected;
   final int completedFlowId;
 
-  const FlowsList(
-      {super.key,
-      required this.flowModel,
-      required this.onFlowSelected,
-      required this.completedFlowId});
+  const FlowsList({
+    super.key,
+    required this.flowModel,
+    required this.onFlowSelected,
+    required this.completedFlowId,
+  });
 
   @override
   State<StatefulWidget> createState() => _FlowsList();
@@ -44,23 +45,30 @@ class _FlowsList extends State<FlowsList> {
   }
 
   void getTopicById() async {
-    final val = await API().fetchTopicById(widget.flowModel.topicId,
-        topicTagId: widget.flowModel.topicContextType != null &&
-                widget.flowModel.topicContextType == TopicContextType.tag
-            ? widget.flowModel.topicContextId
-            : null,
-        moduleId: widget.flowModel.topicContextType != null &&
-                widget.flowModel.topicContextType == TopicContextType.course
-            ? widget.flowModel.topicContextId
-            : null);
-    final fetchedFlows = (val.flows
-            ?.map((e) => TopicFlowsListModel(
-                  name: e.name ?? "",
-                  flowId: e.id,
-                  isCompleted: e.isCompleted,
-                  logo: e.logo,
-                  category: e.category ?? "",
-                ))
+    final val = await API().fetchTopicById(
+      widget.flowModel.topicId,
+      topicTagId:
+          widget.flowModel.topicContextType != null &&
+                  widget.flowModel.topicContextType == TopicContextType.tag
+              ? widget.flowModel.topicContextId
+              : null,
+      moduleId:
+          widget.flowModel.topicContextType != null &&
+                  widget.flowModel.topicContextType == TopicContextType.course
+              ? widget.flowModel.topicContextId
+              : null,
+    );
+    final fetchedFlows =
+        (val.flows
+            ?.map(
+              (e) => TopicFlowsListModel(
+                name: e.name ?? "",
+                flowId: e.id,
+                isCompleted: e.isCompleted,
+                logo: e.logo,
+                category: e.category ?? "",
+              ),
+            )
             .toList()) ??
         [];
 
@@ -78,10 +86,15 @@ class _FlowsList extends State<FlowsList> {
     }
 
     setState(() {
-      segregratedFlows = categorisedFlows.entries
-          .map((entry) =>
-              CategorisedFlow(category: entry.key, flowsList: entry.value))
-          .toList();
+      segregratedFlows =
+          categorisedFlows.entries
+              .map(
+                (entry) => CategorisedFlow(
+                  category: entry.key,
+                  flowsList: entry.value,
+                ),
+              )
+              .toList();
     });
   }
 
@@ -110,25 +123,25 @@ class _FlowsList extends State<FlowsList> {
         children: [
           isLoading
               ? Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: CircularProgressIndicator(
-                    color: colors.progressIndColor1,
-                    backgroundColor: colors.progressIndColor2,
-                  ),
-                )
+                padding: const EdgeInsets.all(8.0),
+                child: CircularProgressIndicator(
+                  color: colors.progressIndColor1,
+                  backgroundColor: colors.progressIndColor2,
+                ),
+              )
               : segregratedFlows.isEmpty
-                  ? Text("No data found")
-                  : Column(
-                      children: [
-                        const SizedBox(height: 24),
-                        ...segregratedFlows.asMap().entries.map((entry) {
-                          final flow = entry.value;
-                          return _buildHorizontalList(flow, bounceFlowId);
-                        }),
-                        renderBanner(),
-                        const SizedBox(height: 20)
-                      ],
-                    ),
+              ? Text("No data found")
+              : Column(
+                children: [
+                  const SizedBox(height: 24),
+                  ...segregratedFlows.asMap().entries.map((entry) {
+                    final flow = entry.value;
+                    return _buildHorizontalList(flow, bounceFlowId);
+                  }),
+                  renderBanner(),
+                  const SizedBox(height: 20),
+                ],
+              ),
         ],
       ),
     );
@@ -146,14 +159,17 @@ class _FlowsList extends State<FlowsList> {
           Text(flow.category.capitalize(), style: textStyles.smallBold),
           const SizedBox(height: 12),
           _buildListView(flow.category, flow.flowsList, bounceFlowId),
-          const SizedBox(height: 24)
+          const SizedBox(height: 24),
         ],
       ),
     );
   }
 
-  Widget _buildListView(String categoryTitle,
-      List<TopicFlowsListModel> flowsList, int? bounceFlowId) {
+  Widget _buildListView(
+    String categoryTitle,
+    List<TopicFlowsListModel> flowsList,
+    int? bounceFlowId,
+  ) {
     final colors =
         TFS().themeData?.customColors ?? Theme.of(context).customColors;
     final nameGroup = AutoSizeGroup();
@@ -162,11 +178,13 @@ class _FlowsList extends State<FlowsList> {
       physics: NeverScrollableScrollPhysics(),
       shrinkWrap: true,
       itemCount: flowsList.length,
-      gridDelegate:
-          SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 4),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 4,
+      ),
       itemBuilder: (context, index) {
         final item = flowsList[index];
-        final showAnimation = widget.completedFlowId != -1 &&
+        final showAnimation =
+            widget.completedFlowId != -1 &&
             widget.completedFlowId == item.flowId;
         final shouldBounce = item.flowId == bounceFlowId;
 
@@ -200,7 +218,8 @@ class _FlowsList extends State<FlowsList> {
                         height: 24,
                         decoration: BoxDecoration(
                           borderRadius: const BorderRadius.only(
-                              topRight: Radius.circular(4)),
+                            topRight: Radius.circular(4),
+                          ),
                           color: colors.primary,
                         ),
                         child: Align(
@@ -209,12 +228,12 @@ class _FlowsList extends State<FlowsList> {
                             offset: const Offset(5, -3),
                             child: SvgPicture.asset(
                               item.isCompleted
-                                  ? "packages/tradeable_flutter_sdk/lib/assets/images/course_completed_icon.svg"
-                                  : categoryTitle
-                                          .toLowerCase()
-                                          .contains("education")
-                                      ? "packages/tradeable_flutter_sdk/lib/assets/images/search_icon.svg"
-                                      : "packages/tradeable_flutter_sdk/lib/assets/images/video_icon.svg",
+                                  ? "lib/assets/images/course_completed_icon.svg"
+                                  : categoryTitle.toLowerCase().contains(
+                                    "education",
+                                  )
+                                  ? "lib/assets/images/search_icon.svg"
+                                  : "lib/assets/images/video_icon.svg",
                               height: 10,
                               width: 10,
                               fit: BoxFit.contain,
@@ -229,7 +248,7 @@ class _FlowsList extends State<FlowsList> {
                       height: 50,
                       width: 50,
                       child: Lottie.asset(
-                        'packages/tradeable_flutter_sdk/lib/assets/images/completed_animation.json',
+                        'lib/assets/images/completed_animation.json',
                         repeat: false,
                       ),
                     ),
@@ -253,8 +272,9 @@ class _FlowsList extends State<FlowsList> {
         return MaterialButton(
           padding: EdgeInsets.zero,
           onPressed: () => widget.onFlowSelected(item.flowId),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           child: shouldBounce ? BouncingWidget(child: flowIcon) : flowIcon,
         );
       },
@@ -268,44 +288,46 @@ class _FlowsList extends State<FlowsList> {
         TFS().themeData?.customColors ?? Theme.of(context).customColors;
 
     return Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: Color(0xffF4EBF9),
-        ),
-        height: 130,
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text("Enjoyed the lesson?", style: textStyles.mediumBold),
-                  Text("Put your learning into action."),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: 100,
-                    child: ButtonWidget(
-                        color: colors.primary,
-                        btnContent: "Let's go!",
-                        borderRadius: BorderRadius.circular(12),
-                        textStyle: textStyles.smallBold
-                            .copyWith(fontSize: 12, color: Colors.white),
-                        onTap: () {
-                          Navigator.of(context).pop();
-                          Navigator.of(context).pop();
-                        }),
-                  )
-                ],
-              ),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: Color(0xffF4EBF9),
+      ),
+      height: 130,
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text("Enjoyed the lesson?", style: textStyles.mediumBold),
+                Text("Put your learning into action."),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: 100,
+                  child: ButtonWidget(
+                    color: colors.primary,
+                    btnContent: "Let's go!",
+                    borderRadius: BorderRadius.circular(12),
+                    textStyle: textStyles.smallBold.copyWith(
+                      fontSize: 12,
+                      color: Colors.white,
+                    ),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ),
+              ],
             ),
-            Image.asset(
-                "packages/tradeable_flutter_sdk/lib/assets/images/banner_image.png",
-                height: 126)
-          ],
-        ));
+          ),
+          Image.asset("lib/assets/images/banner_image.png", height: 126),
+        ],
+      ),
+    );
   }
 }
 
