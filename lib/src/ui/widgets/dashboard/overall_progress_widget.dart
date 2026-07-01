@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:tradeable_flutter_sdk/src/ioswrapper/flutter_bridge.dart';
 import 'package:tradeable_flutter_sdk/src/models/courses_model.dart';
 import 'package:tradeable_flutter_sdk/src/models/progress_model.dart';
 import 'package:tradeable_flutter_sdk/src/network/api.dart';
@@ -24,6 +25,17 @@ class _OverallProgressIndicator extends State<OverallProgressWidget> {
   int total = 0;
   ProgressModel? model;
 
+  bool get _shouldOpenInNativeHost {
+    return FlutterBridge().navHandler.state.mode == 'userProgress';
+  }
+
+  Future<void> _openUserProgressInHost() {
+    return FlutterBridge.nav.invokeMethod('sendData', {
+      'action': 'openUserProgress',
+      'title': 'My Activity',
+    });
+  }
+
   @override
   void initState() {
     getProgress();
@@ -46,63 +58,86 @@ class _OverallProgressIndicator extends State<OverallProgressWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final completedPercent = completed / total;
-    final inProgressPercent = inProgress / total;
+    final completedPercent = total > 0 ? completed / total : 0.0;
+    final inProgressPercent = total > 0 ? inProgress / total : 0.0;
 
     final colors =
         TFS().themeData?.customColors ?? Theme.of(context).customColors;
     final textStyles =
         TFS().themeData?.customTextStyles ?? Theme.of(context).customTextStyles;
 
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: colors.darkShade2)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text("Overall Progress",
-                        style: textStyles.mediumBold.copyWith(fontSize: 16)),
-                    const SizedBox(height: 6),
-                    Text(
-                        completedPercent == 0
-                            ? "Your financial learning journey starts here —begin your first module to build smarter money skills."
-                            : completedPercent > 0
-                                ? "You’re making great progress—keep going to reach your learning goals!"
-                                : "You did it! You’ve completed the course.Keep the momentum going by revisioning the modules",
-                        style: textStyles.smallNormal.copyWith(
-                            fontSize: 11, color: colors.textColorSecondary))
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
-              model != null
-                  ? _progressCircle(completedPercent, inProgressPercent)
-                  : Center(child: CircularProgressIndicator()),
-            ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: colors.darkShade2),
           ),
-          const SizedBox(height: 24),
-          _legend(),
-          const SizedBox(height: 24),
-          model != null
-              ? RecentActivity(
-                  overallProgress: model!.overall,
-                  progressPercent: completedPercent,
-                  coursesModel: widget.coursesModel,
-                  updateProgress: () {
-                    getProgress();
-                  })
-              : RecentActivityShimmer(),
-        ],
-      ),
+          child: SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight:
+                    constraints.maxHeight.isFinite
+                        ? constraints.maxHeight - 24
+                        : 0,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Overall Progress",
+                              style: textStyles.mediumBold.copyWith(
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              completedPercent == 0
+                                  ? "Your financial learning journey starts here —begin your first module to build smarter money skills."
+                                  : completedPercent < 1
+                                  ? "You’re making great progress—keep going to reach your learning goals!"
+                                  : "You did it! You’ve completed the course. Keep the momentum going by revisiting the modules.",
+                              style: textStyles.smallNormal.copyWith(
+                                fontSize: 11,
+                                color: colors.textColorSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      model != null
+                          ? _progressCircle(completedPercent, inProgressPercent)
+                          : const Center(child: CircularProgressIndicator()),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  _legend(),
+                  const SizedBox(height: 24),
+                  model != null
+                      ? RecentActivity(
+                        overallProgress: model!.overall,
+                        progressPercent: completedPercent,
+                        coursesModel: widget.coursesModel,
+                        updateProgress: () {
+                          getProgress();
+                        },
+                      )
+                      : const RecentActivityShimmer(),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -155,11 +190,12 @@ class _OverallProgressIndicator extends State<OverallProgressWidget> {
             children: [
               _legendItem("In-progress", colors.sliderColor, inProgress),
               SizedBox(
-                  height: 40,
-                  child: VerticalDivider(
-                    color: colors.borderColorSecondary,
-                    thickness: 1,
-                  )),
+                height: 40,
+                child: VerticalDivider(
+                  color: colors.borderColorSecondary,
+                  thickness: 1,
+                ),
+              ),
               _legendItem("Completed", colors.alertSuccess, completed),
             ],
           ),
@@ -167,45 +203,54 @@ class _OverallProgressIndicator extends State<OverallProgressWidget> {
         (inProgress == 0 && completed == 0)
             ? Container()
             : Row(
-                children: [
-                  SizedBox(
-                      height: 40,
-                      child: VerticalDivider(
-                        color: colors.borderColorSecondary,
-                        thickness: 1,
-                      )),
-                  const SizedBox(width: 10),
-                  InkWell(
-                    onTap: () async {
-                      await Navigator.of(context).push(MaterialPageRoute(
-                          builder: (context) => UserActivityScreen(
-                                progressItems: model?.overall ?? [],
-                                updateProgress: () {
-                                  getProgress();
-                                },
-                              )));
-                      getProgress();
-                    },
-                    child: Row(
-                      children: [
-                        Text(
-                          "VIEW ALL",
-                          style: textStyles.smallBold.copyWith(
-                            fontSize: 12,
-                            color: colors.sliderColor,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Icon(
-                          Icons.arrow_forward_ios,
-                          size: 10,
+              children: [
+                SizedBox(
+                  height: 40,
+                  child: VerticalDivider(
+                    color: colors.borderColorSecondary,
+                    thickness: 1,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                InkWell(
+                  onTap: () async {
+                    if (_shouldOpenInNativeHost) {
+                      await _openUserProgressInHost();
+                      return;
+                    }
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder:
+                            (context) => UserActivityScreen(
+                              progressItems: model?.overall ?? [],
+                              updateProgress: () {
+                                getProgress();
+                              },
+                            ),
+                      ),
+                    );
+                    getProgress();
+                  },
+                  child: Row(
+                    children: [
+                      Text(
+                        "VIEW ALL",
+                        style: textStyles.smallBold.copyWith(
+                          fontSize: 12,
                           color: colors.sliderColor,
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        size: 10,
+                        color: colors.sliderColor,
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
+            ),
       ],
     );
   }
@@ -221,8 +266,10 @@ class _OverallProgressIndicator extends State<OverallProgressWidget> {
           children: [
             Icon(Icons.circle, size: 10, color: color),
             const SizedBox(width: 6),
-            Text(value.toInt().toString(),
-                style: textStyles.largeBold.copyWith(color: color)),
+            Text(
+              value.toInt().toString(),
+              style: textStyles.largeBold.copyWith(color: color),
+            ),
           ],
         ),
         Text(label, style: textStyles.smallNormal),
@@ -249,11 +296,12 @@ class _MultiProgressPainter extends CustomPainter {
     final radius = size.width / 2 - strokeWidth / 2;
     final rect = Rect.fromCircle(center: center, radius: radius);
 
-    final bgPaint = Paint()
-      ..color = backgroundColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.butt;
+    final bgPaint =
+        Paint()
+          ..color = backgroundColor
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = strokeWidth
+          ..strokeCap = StrokeCap.butt;
 
     canvas.drawArc(rect, 0, 2 * pi, false, bgPaint);
 
@@ -262,11 +310,12 @@ class _MultiProgressPainter extends CustomPainter {
       final sweep = (2 * pi * seg.percent) - gapAngle;
       if (sweep <= 0) continue;
 
-      final paint = Paint()
-        ..color = seg.color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeWidth
-        ..strokeCap = StrokeCap.butt;
+      final paint =
+          Paint()
+            ..color = seg.color
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = strokeWidth
+            ..strokeCap = StrokeCap.butt;
 
       canvas.drawArc(rect, startAngle, sweep, false, paint);
       startAngle += sweep + gapAngle;

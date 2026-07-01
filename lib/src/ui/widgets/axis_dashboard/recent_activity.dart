@@ -1,5 +1,6 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
+import 'package:tradeable_flutter_sdk/src/ioswrapper/flutter_bridge.dart';
 import 'package:tradeable_flutter_sdk/src/models/courses_model.dart';
 import 'package:tradeable_flutter_sdk/src/models/progress_model.dart';
 import 'package:tradeable_flutter_sdk/src/tfs.dart';
@@ -13,12 +14,26 @@ class RecentActivity extends StatelessWidget {
   final CoursesModel? coursesModel;
   final VoidCallback updateProgress;
 
-  const RecentActivity(
-      {super.key,
-      required this.overallProgress,
-      required this.progressPercent,
-      this.coursesModel,
-      required this.updateProgress});
+  const RecentActivity({
+    super.key,
+    required this.overallProgress,
+    required this.progressPercent,
+    this.coursesModel,
+    required this.updateProgress,
+  });
+
+  bool _shouldOpenCourseInNativeHost() {
+    final mode = FlutterBridge().navHandler.state.mode;
+    return mode == 'userProgress' || mode == 'userProgressScreen';
+  }
+
+  Future<void> _openCourseInHost(OverallProgressModel item) {
+    return FlutterBridge.nav.invokeMethod('sendData', {
+      'action': 'openCourseDetails',
+      'courseId': item.id,
+      'title': item.name,
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,81 +44,98 @@ class RecentActivity extends StatelessWidget {
 
     return overallProgress.isNotEmpty
         ? Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                  progressPercent > 0
-                      ? "Recent Activity"
-                      : "Let's get you started",
-                  style:
-                      textStyles.smallNormal.copyWith(color: colors.iconColor)),
-              const SizedBox(height: 10),
-              renderList(context)
-            ],
-          )
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              progressPercent > 0 ? "Recent Activity" : "Let's get you started",
+              style: textStyles.smallNormal.copyWith(color: colors.iconColor),
+            ),
+            const SizedBox(height: 10),
+            renderList(context),
+          ],
+        )
         : Container();
   }
 
   Widget renderList(BuildContext context) {
     final takeCount = overallProgress.isNotEmpty ? 2 : 1;
     return Column(
-      children: overallProgress.isNotEmpty
-          ? overallProgress.asMap().entries.take(takeCount).map((entry) {
-              final index = entry.key;
-              final item = entry.value;
-              return _buildProgressItem(item, context, index);
-            }).toList()
-          : coursesModel != null
+      children:
+          overallProgress.isNotEmpty
+              ? overallProgress.asMap().entries.take(takeCount).map((entry) {
+                final index = entry.key;
+                final item = entry.value;
+                return _buildProgressItem(item, context, index);
+              }).toList()
+              : coursesModel != null
               ? [
-                  _buildNotStartedCard(
-                    OverallProgressModel(
-                      id: coursesModel!.id,
-                      name: coursesModel!.name,
-                      description: coursesModel!.description,
-                      logo: coursesModel!.logo,
-                      lastActivityAt: DateTime.now(),
-                      progress: coursesModel!.progress,
-                    ),
-                    context,
-                  )
-                ]
+                _buildNotStartedCard(
+                  OverallProgressModel(
+                    id: coursesModel!.id,
+                    name: coursesModel!.name,
+                    description: coursesModel!.description,
+                    logo: coursesModel!.logo,
+                    lastActivityAt: DateTime.now(),
+                    progress: coursesModel!.progress,
+                  ),
+                  context,
+                ),
+              ]
               : [],
     );
   }
 
   Widget _buildProgressItem(
-      OverallProgressModel item, BuildContext context, int index) {
+    OverallProgressModel item,
+    BuildContext context,
+    int index,
+  ) {
     final colors =
         TFS().themeData?.customColors ?? Theme.of(context).customColors;
     final textStyles =
         TFS().themeData?.customTextStyles ?? Theme.of(context).customTextStyles;
 
-    final itemProgressPercent = item.progress.total > 0
-        ? (item.progress.completed / item.progress.total).clamp(0.0, 1.0)
-        : 0.0;
+    final itemProgressPercent =
+        item.progress.total > 0
+            ? (item.progress.completed / item.progress.total).clamp(0.0, 1.0)
+            : 0.0;
     final accentColor = index == 0 ? colors.dataVis1 : colors.dataVis2;
 
     return itemProgressPercent > 0
         ? _buildInProgressCard(
-            item, context, textStyles, colors, accentColor, itemProgressPercent)
+          item,
+          context,
+          textStyles,
+          colors,
+          accentColor,
+          itemProgressPercent,
+        )
         : _buildNotStartedCard(item, context);
   }
 
   Widget _buildInProgressCard(
-      OverallProgressModel item,
-      BuildContext context,
-      dynamic textStyles,
-      dynamic colors,
-      Color accentColor,
-      double progressPercent) {
+    OverallProgressModel item,
+    BuildContext context,
+    dynamic textStyles,
+    dynamic colors,
+    Color accentColor,
+    double progressPercent,
+  ) {
     return InkWell(
       onTap: () async {
-        TFS().onEvent(eventName: AppEvents.viewAllTopicsInCourse, data: {
-          "progressPercent": progressPercent,
-          "courseTitle": item.name
-        });
-        await Navigator.of(context).push(MaterialPageRoute(
-            builder: (_) => CourseDetailsPage(courseId: item.id)));
+        TFS().onEvent(
+          eventName: AppEvents.viewAllTopicsInCourse,
+          data: {"progressPercent": progressPercent, "courseTitle": item.name},
+        );
+        if (_shouldOpenCourseInNativeHost()) {
+          await _openCourseInHost(item);
+          return;
+        }
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => CourseDetailsPage(courseId: item.id),
+          ),
+        );
         updateProgress();
       },
       borderRadius: BorderRadius.circular(12),
@@ -121,7 +153,9 @@ class RecentActivity extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: const BoxDecoration(
-                  shape: BoxShape.circle, color: Colors.white),
+                shape: BoxShape.circle,
+                color: Colors.white,
+              ),
               clipBehavior: Clip.antiAlias,
               child: Image.network(item.logo.url, fit: BoxFit.cover),
             ),
@@ -146,8 +180,9 @@ class RecentActivity extends StatelessWidget {
                         padding: const EdgeInsets.only(left: 8),
                         child: Text(
                           "${(progressPercent * 100).toStringAsFixed(0)}%",
-                          style: textStyles.smallNormal
-                              .copyWith(color: accentColor),
+                          style: textStyles.smallNormal.copyWith(
+                            color: accentColor,
+                          ),
                         ),
                       ),
                     ],
@@ -179,12 +214,19 @@ class RecentActivity extends StatelessWidget {
 
     return InkWell(
       onTap: () async {
-        TFS().onEvent(eventName: AppEvents.viewAllTopicsInCourse, data: {
-          "progressPercent": progressPercent,
-          "courseTitle": item.name
-        });
-        await Navigator.of(context).push(MaterialPageRoute(
-            builder: (_) => CourseDetailsPage(courseId: item.id)));
+        TFS().onEvent(
+          eventName: AppEvents.viewAllTopicsInCourse,
+          data: {"progressPercent": progressPercent, "courseTitle": item.name},
+        );
+        if (_shouldOpenCourseInNativeHost()) {
+          await _openCourseInHost(item);
+          return;
+        }
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => CourseDetailsPage(courseId: item.id),
+          ),
+        );
         updateProgress();
       },
       borderRadius: BorderRadius.circular(12),
@@ -202,7 +244,9 @@ class RecentActivity extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: const BoxDecoration(
-                  shape: BoxShape.circle, color: Colors.white),
+                shape: BoxShape.circle,
+                color: Colors.white,
+              ),
               clipBehavior: Clip.antiAlias,
               child: Image.network(item.logo.url, fit: BoxFit.cover),
             ),
@@ -232,8 +276,11 @@ class RecentActivity extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 4),
-                          Icon(Icons.arrow_forward_ios,
-                              size: 12, color: colors.borderColorPrimary),
+                          Icon(
+                            Icons.arrow_forward_ios,
+                            size: 12,
+                            color: colors.borderColorPrimary,
+                          ),
                         ],
                       ),
                     ],

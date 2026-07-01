@@ -34,9 +34,7 @@ class CourseListItem extends StatelessWidget {
       decoration: BoxDecoration(
         color: courseBgColor,
         image: DecorationImage(
-          image: AssetImage(
-            "packages/tradeable_flutter_sdk/lib/assets/images/course_container_bg.png",
-          ),
+          image: AssetImage("lib/assets/images/course_container_bg.png"),
           fit: BoxFit.contain,
           alignment: Alignment.bottomCenter,
         ),
@@ -45,8 +43,9 @@ class CourseListItem extends StatelessWidget {
       child: InkWell(
         onTap: () {
           TFS().onEvent(
-              eventName: AppEvents.courseBottomSheetOpened,
-              data: {"courseTitle": model.name});
+            eventName: AppEvents.courseBottomSheetOpened,
+            data: {"courseTitle": model.name},
+          );
           showBottomsheet(context, model.id);
         },
         child: Stack(
@@ -70,8 +69,11 @@ class CourseListItem extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 6),
-                      Icon(Icons.arrow_forward_ios,
-                          size: 14, color: colors.borderColorPrimary),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        size: 14,
+                        color: colors.borderColorPrimary,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 4),
@@ -99,8 +101,10 @@ class CourseListItem extends StatelessWidget {
                 child: Container(
                   height: 19,
                   width: 57,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: colors.primary,
                     borderRadius: BorderRadius.circular(4),
@@ -108,8 +112,11 @@ class CourseListItem extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.local_fire_department,
-                          color: colors.buttonColor, size: 14),
+                      Icon(
+                        Icons.local_fire_department,
+                        color: colors.buttonColor,
+                        size: 14,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         'NEW',

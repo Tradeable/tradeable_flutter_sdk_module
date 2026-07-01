@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:tradeable_flutter_sdk/src/ioswrapper/flutter_bridge.dart';
 import 'package:tradeable_flutter_sdk/src/ioswrapper/view_state.dart';
 import 'package:tradeable_flutter_sdk/src/ui/pages/topic_list_page.dart';
+import 'package:tradeable_flutter_sdk/src/ui/widgets/dashboard/overall_progress_widget.dart';
+import 'package:tradeable_flutter_sdk/src/ui/widgets/dashboard/user_activity_screen.dart';
 import 'package:tradeable_flutter_sdk/tradeable_flutter_sdk.dart';
 
 void main() {
@@ -98,6 +100,21 @@ class _MyAppState extends State<MyApp> {
       case 'fullscreen':
         return TFS().isInitialized
             ? TopicDetailPage(topicId: state.topicId)
+            : const Center(child: CircularProgressIndicator());
+
+      case 'userProgress':
+        return TFS().isInitialized
+            ? OverallProgressWidget()
+            : const Center(child: CircularProgressIndicator());
+
+      case 'userProgressScreen':
+        return TFS().isInitialized
+            ? UserActivityScreen(progressItems: const [], updateProgress: () {})
+            : const Center(child: CircularProgressIndicator());
+
+      case 'courseDetailsScreen':
+        return TFS().isInitialized
+            ? CourseDetailsPage(courseId: state.courseId)
             : const Center(child: CircularProgressIndicator());
 
       default:

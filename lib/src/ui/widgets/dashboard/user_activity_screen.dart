@@ -1,5 +1,6 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
+import 'package:tradeable_flutter_sdk/src/ioswrapper/flutter_bridge.dart';
 import 'package:tradeable_flutter_sdk/src/models/progress_model.dart';
 import 'package:tradeable_flutter_sdk/src/network/api.dart';
 import 'package:tradeable_flutter_sdk/src/ui/pages/course_details_page.dart';
@@ -27,6 +28,18 @@ class _UserActivityScreen extends State<UserActivityScreen> {
   List<OverallProgressModel> progressItems = [];
   List<OverallProgressModel> inProgressItems = [];
   List<OverallProgressModel> completedItems = [];
+
+  bool get _shouldOpenCourseInNativeHost {
+    return FlutterBridge().navHandler.state.mode == 'userProgressScreen';
+  }
+
+  Future<void> _openCourseInHost(OverallProgressModel item) {
+    return FlutterBridge.nav.invokeMethod('sendData', {
+      'action': 'openCourseDetails',
+      'courseId': item.id,
+      'title': item.name,
+    });
+  }
 
   @override
   void initState() {
@@ -65,10 +78,13 @@ class _UserActivityScreen extends State<UserActivityScreen> {
       }
     }
 
-    TFS().onEvent(eventName: AppEvents.viewAllOverallProgress, data: {
-      "completed": completedItems.length,
-      "inProgress": inProgressItems.length
-    });
+    TFS().onEvent(
+      eventName: AppEvents.viewAllOverallProgress,
+      data: {
+        "completed": completedItems.length,
+        "inProgress": inProgressItems.length,
+      },
+    );
   }
 
   @override
@@ -83,6 +99,13 @@ class _UserActivityScreen extends State<UserActivityScreen> {
       appBar: AppBarWidget(
         title: "My Activity",
         color: colors.background,
+        onBack: () {
+          if (FlutterBridge().navHandler.state.mode == 'userProgressScreen') {
+            FlutterBridge.base.invokeMethod('closeFullscreen');
+            return;
+          }
+          Navigator.of(context).pop();
+        },
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -91,21 +114,23 @@ class _UserActivityScreen extends State<UserActivityScreen> {
             isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("In Progress", style: textStyles.mediumBold),
-                        const SizedBox(height: 8),
-                        renderItems(context, inProgressItems),
-                        const SizedBox(height: 12),
-                        Text("Completed", style: textStyles.mediumBold),
-                        const SizedBox(height: 8),
-                        renderItems(context, completedItems),
-                      ],
-                    ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
                   ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("In Progress", style: textStyles.mediumBold),
+                      const SizedBox(height: 8),
+                      renderItems(context, inProgressItems),
+                      const SizedBox(height: 12),
+                      Text("Completed", style: textStyles.mediumBold),
+                      const SizedBox(height: 8),
+                      renderItems(context, completedItems),
+                    ],
+                  ),
+                ),
           ],
         ),
       ),
@@ -120,9 +145,7 @@ class _UserActivityScreen extends State<UserActivityScreen> {
       width: double.infinity,
       height: 160,
       decoration: BoxDecoration(color: colors.neutralColor),
-      child: Image.asset(
-        "packages/tradeable_flutter_sdk/lib/assets/images/all_courses.png",
-      ),
+      child: Image.asset("lib/assets/images/all_courses.png"),
     );
   }
 
@@ -138,102 +161,114 @@ class _UserActivityScreen extends State<UserActivityScreen> {
     ];
 
     return Column(
-      children: items.asMap().entries.map((entry) {
-        final index = entry.key;
-        final item = entry.value;
-        final cardColor = cardColors[index % cardColors.length];
+      children:
+          items.asMap().entries.map((entry) {
+            final index = entry.key;
+            final item = entry.value;
+            final cardColor = cardColors[index % cardColors.length];
 
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(10),
-            onTap: () async {
-              TFS().onEvent(eventName: AppEvents.viewAllTopicsInCourse, data: {
-                "courseTitle": item.name,
-                "progress":
-                    ((item.progress.completed / item.progress.total) * 100)
-                        .toStringAsFixed(0)
-              });
-              await Navigator.of(context)
-                  .push(MaterialPageRoute(
-                      builder: (context) =>
-                          CourseDetailsPage(courseId: item.id)))
-                  .then((val) {
-                setState(() {
-                  progressItems = [];
-                  isLoading = true;
-                  getProgress();
-                });
-                widget.updateProgress();
-              });
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              decoration: BoxDecoration(
-                color: cardColor,
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: InkWell(
                 borderRadius: BorderRadius.circular(10),
+                onTap: () async {
+                  TFS().onEvent(
+                    eventName: AppEvents.viewAllTopicsInCourse,
+                    data: {
+                      "courseTitle": item.name,
+                      "progress": ((item.progress.completed /
+                                  item.progress.total) *
+                              100)
+                          .toStringAsFixed(0),
+                    },
+                  );
+                  if (_shouldOpenCourseInNativeHost) {
+                    await _openCourseInHost(item);
+                    return;
+                  }
+                  await Navigator.of(context)
+                      .push(
+                        MaterialPageRoute(
+                          builder:
+                              (context) => CourseDetailsPage(courseId: item.id),
+                        ),
+                      )
+                      .then((val) {
+                        setState(() {
+                          progressItems = [];
+                          isLoading = true;
+                          getProgress();
+                        });
+                        widget.updateProgress();
+                      });
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  decoration: BoxDecoration(
+                    color: cardColor,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          item.logo.url,
+                          fit: BoxFit.cover,
+                          width: 70,
+                          height: 70,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            AutoSizeText(
+                              item.name,
+                              maxFontSize: 14,
+                              minFontSize: 8,
+                              style: textStyles.smallBold,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              "${((item.progress.completed / item.progress.total) * 100).toStringAsFixed(0)}% completed",
+                              style: textStyles.smallNormal.copyWith(
+                                fontSize: 12,
+                                color: colors.textColorSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              "MORE INFO",
+                              style: textStyles.smallBold.copyWith(
+                                fontSize: 12,
+                                color: colors.borderColorPrimary,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.arrow_forward_ios,
+                              size: 12,
+                              color: colors.borderColorPrimary,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              child: Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      item.logo.url,
-                      fit: BoxFit.cover,
-                      width: 70,
-                      height: 70,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        AutoSizeText(
-                          item.name,
-                          maxFontSize: 14,
-                          minFontSize: 8,
-                          style: textStyles.smallBold,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          "${((item.progress.completed / item.progress.total) * 100).toStringAsFixed(0)}% completed",
-                          style: textStyles.smallNormal.copyWith(
-                            fontSize: 12,
-                            color: colors.textColorSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          "MORE INFO",
-                          style: textStyles.smallBold.copyWith(
-                            fontSize: 12,
-                            color: colors.borderColorPrimary,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Icon(
-                          Icons.arrow_forward_ios,
-                          size: 12,
-                          color: colors.borderColorPrimary,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      }).toList(),
+            );
+          }).toList(),
     );
   }
 }

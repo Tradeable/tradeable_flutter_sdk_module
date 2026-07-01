@@ -35,24 +35,24 @@ class _TradeableContainerState extends State<TradeableContainer>
   @override
   Widget build(BuildContext context) {
     return Material(
-        child: Stack(
-      children: [
-        widget.child,
-        Positioned(
-          right: 0,
-          top: learnBtnTopPos,
-          child: GestureDetector(
-            onVerticalDragUpdate: (details) {
-              if (!widget.isLearnBtnStatic) {
-                setState(() {
-                  learnBtnTopPos += details.delta.dy;
-                });
-              }
-            },
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
+      child: Stack(
+        children: [
+          widget.child,
+          Positioned(
+            right: 0,
+            top: learnBtnTopPos,
+            child: GestureDetector(
+              onVerticalDragUpdate: (details) {
+                if (!widget.isLearnBtnStatic) {
+                  setState(() {
+                    learnBtnTopPos += details.delta.dy;
+                  });
+                }
+              },
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
                   boxShadow: [
                     BoxShadow(
                       color: Color.fromARGB(255, 245, 241, 10),
@@ -67,45 +67,48 @@ class _TradeableContainerState extends State<TradeableContainer>
                     colors: [Color(0xffed1164), Color(0xff97144d)],
                   ),
                   borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(8),
-                      bottomLeft: Radius.circular(8))),
-              child: MaterialButton(
-                padding: const EdgeInsets.all(0),
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(8),
                     bottomLeft: Radius.circular(8),
-                    topRight: Radius.zero,
-                    bottomRight: Radius.zero,
                   ),
                 ),
-                onPressed: () {
-                  TradeableRightSideDrawer.open(
+                child: MaterialButton(
+                  padding: const EdgeInsets.all(0),
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(8),
+                      bottomLeft: Radius.circular(8),
+                      topRight: Radius.zero,
+                      bottomRight: Radius.zero,
+                    ),
+                  ),
+                  onPressed: () {
+                    TradeableRightSideDrawer.open(
                       context: context,
                       drawerBorderRadius: 24,
-                      body: widget.pageId != null
-                          ? TopicListPage(
-                              tagId: widget.pageId?.topicTagId,
-                              onClose: () {
-                                Navigator.of(context).pop();
-                              },
-                            )
-                          : Center(
-                              child: Text("Please provide Id"),
-                            ));
-                },
-                child: Center(
-                  child: //Icon(Icons.chevron_left, color: Colors.white),
-                      Image.asset(
-                    "packages/tradeable_flutter_sdk/lib/assets/images/axis_learn_logo.png",
-                    height: 30,
+                      body:
+                          widget.pageId != null
+                              ? TopicListPage(
+                                tagId: widget.pageId?.topicTagId,
+                                onClose: () {
+                                  Navigator.of(context).pop();
+                                },
+                              )
+                              : Center(child: Text("Please provide Id")),
+                    );
+                  },
+                  child: Center(
+                    child: //Icon(Icons.chevron_left, color: Colors.white),
+                        Image.asset(
+                      "lib/assets/images/axis_learn_logo.png",
+                      height: 30,
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        )
-      ],
-    ));
+        ],
+      ),
+    );
   }
 }

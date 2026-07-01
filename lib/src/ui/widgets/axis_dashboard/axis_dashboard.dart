@@ -6,10 +6,11 @@ import 'package:tradeable_flutter_sdk/tradeable_flutter_sdk.dart';
 class AxisDashboard extends StatefulWidget {
   final EdgeInsets padding;
   final int dateThreshold;
-  const AxisDashboard(
-      {super.key,
-      this.padding = const EdgeInsets.all(12),
-      this.dateThreshold = 100000});
+  const AxisDashboard({
+    super.key,
+    this.padding = const EdgeInsets.all(12),
+    this.dateThreshold = 100000,
+  });
 
   @override
   State<AxisDashboard> createState() => _AxisDashboardState();
@@ -24,8 +25,9 @@ class _AxisDashboardState extends State<AxisDashboard> {
   @override
   void initState() {
     super.initState();
-    referenceDate =
-        DateTime.now().subtract(Duration(days: widget.dateThreshold));
+    referenceDate = DateTime.now().subtract(
+      Duration(days: widget.dateThreshold),
+    );
     fetchData();
   }
 
@@ -53,9 +55,10 @@ class _AxisDashboardState extends State<AxisDashboard> {
     setState(() {
       model = progress;
       selectedProgress = pickedProgress;
-      updatedCourses = updatedCourses.where((course) {
-        return course.createdAt.isAfter(referenceDate);
-      }).toList();
+      updatedCourses =
+          updatedCourses.where((course) {
+            return course.createdAt.isAfter(referenceDate);
+          }).toList();
       updatedCourses.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       courses = updatedCourses;
     });
@@ -72,13 +75,15 @@ class _AxisDashboardState extends State<AxisDashboard> {
           onTap: () {
             Navigator.of(context)
                 .push(
-              MaterialPageRoute(builder: (context) => const LearnDashboard()),
-            )
+                  MaterialPageRoute(
+                    builder: (context) => const LearnDashboard(),
+                  ),
+                )
                 .then((value) {
-              if (value == true) {
-                fetchData();
-              }
-            });
+                  if (value == true) {
+                    fetchData();
+                  }
+                });
           },
           child: Padding(
             padding: EdgeInsets.only(left: widget.padding.left),
@@ -90,11 +95,15 @@ class _AxisDashboardState extends State<AxisDashboard> {
                     children: [
                       Row(
                         children: [
-                          Text("Learn Dashboard",
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w700)),
+                          Text(
+                            "Learn Dashboard",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                           const SizedBox(width: 4),
-                          Icon(Icons.keyboard_arrow_right_sharp, size: 20)
+                          Icon(Icons.keyboard_arrow_right_sharp, size: 20),
                         ],
                       ),
                       const SizedBox(height: 8),
@@ -106,16 +115,16 @@ class _AxisDashboardState extends State<AxisDashboard> {
                           fontSize: 14,
                           fontWeight: FontWeight.w400,
                         ),
-                      )
+                      ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 24),
                 Image.asset(
-                  "packages/tradeable_flutter_sdk/lib/assets/images/learn_dashboard_image.png",
+                  "lib/assets/images/learn_dashboard_image.png",
                   height: 72,
                   width: 90,
-                )
+                ),
               ],
             ),
           ),
@@ -126,7 +135,8 @@ class _AxisDashboardState extends State<AxisDashboard> {
             padding: widget.padding,
             child: OverallProgress(
               progressModel: model!,
-              coursesModel: selectedProgress ??
+              coursesModel:
+                  selectedProgress ??
                   (model!.overall.isNotEmpty ? model!.overall.first : null),
             ),
           ),
@@ -134,7 +144,7 @@ class _AxisDashboardState extends State<AxisDashboard> {
         Padding(
           padding: EdgeInsets.only(left: widget.padding.left),
           child: CoursesList(courses: courses),
-        )
+        ),
       ],
     );
   }

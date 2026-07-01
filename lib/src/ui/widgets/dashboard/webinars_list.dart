@@ -24,12 +24,18 @@ class _WebinarsList extends State<WebinarsList> {
           children: [
             Text("Webinars", style: textStyles.mediumBold),
             Spacer(),
-            Text("View all",
-                style: textStyles.smallBold
-                    .copyWith(color: colors.borderColorPrimary)),
+            Text(
+              "View all",
+              style: textStyles.smallBold.copyWith(
+                color: colors.borderColorPrimary,
+              ),
+            ),
             const SizedBox(width: 6),
-            Icon(Icons.arrow_forward_ios,
-                size: 10, color: colors.borderColorPrimary),
+            Icon(
+              Icons.arrow_forward_ios,
+              size: 10,
+              color: colors.borderColorPrimary,
+            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -40,7 +46,7 @@ class _WebinarsList extends State<WebinarsList> {
           itemBuilder: (context, index) {
             return WebinarsListItem();
           },
-        )
+        ),
       ],
     );
   }
@@ -68,11 +74,13 @@ class WebinarsListItem extends StatelessWidget {
         children: [
           Container(
             decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14), color: Colors.black),
+              borderRadius: BorderRadius.circular(14),
+              color: Colors.black,
+            ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(14),
               child: Image.asset(
-                "packages/tradeable_flutter_sdk/lib/assets/images/course_container_bg.png",
+                "lib/assets/images/course_container_bg.png",
                 height: 110,
                 width: 90,
                 fit: BoxFit.cover,
@@ -95,7 +103,7 @@ class WebinarsListItem extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 10),
-                    Icon(Icons.arrow_forward_ios, size: 14)
+                    Icon(Icons.arrow_forward_ios, size: 14),
                   ],
                 ),
                 Spacer(),
@@ -106,15 +114,16 @@ class WebinarsListItem extends StatelessWidget {
                     webinarInfo("60 mins", Icons.timer_outlined, context),
                     Spacer(),
                     IconButton(
-                        padding: EdgeInsets.zero,
-                        onPressed: () {},
-                        icon: Icon(Icons.notifications_none),
-                        color: colors.borderColorPrimary)
+                      padding: EdgeInsets.zero,
+                      onPressed: () {},
+                      icon: Icon(Icons.notifications_none),
+                      color: colors.borderColorPrimary,
+                    ),
                   ],
-                )
+                ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
@@ -130,9 +139,12 @@ class WebinarsListItem extends StatelessWidget {
       children: [
         Icon(icon, color: colors.textColorSecondary, size: 16),
         SizedBox(width: 4),
-        Text(title,
-            style: textStyles.smallNormal
-                .copyWith(color: colors.textColorSecondary))
+        Text(
+          title,
+          style: textStyles.smallNormal.copyWith(
+            color: colors.textColorSecondary,
+          ),
+        ),
       ],
     );
   }

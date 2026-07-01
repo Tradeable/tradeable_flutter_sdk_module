@@ -22,10 +22,12 @@ class RecentActivityShimmer extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
           ),
           child: Shimmer.fromColors(
-            baseColor:
-                colors.borderColorSecondary.withAlpha((0.3 * 255).round()),
-            highlightColor:
-                colors.cardBasicBackground.withAlpha((0.6 * 255).round()),
+            baseColor: colors.borderColorSecondary.withAlpha(
+              (0.3 * 255).round(),
+            ),
+            highlightColor: colors.cardBasicBackground.withAlpha(
+              (0.6 * 255).round(),
+            ),
             period: const Duration(milliseconds: 1200),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
