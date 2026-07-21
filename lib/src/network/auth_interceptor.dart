@@ -81,8 +81,8 @@ class AuthInterceptor extends Interceptor {
     if (TFS().portalToken != null) {
       requestOptions.headers['Authorization'] = TFS().authorization ?? '';
       requestOptions.headers['x-api-client-id'] = TFS().appId ?? '';
-      requestOptions.headers['x-subAccountID'] = TFS().clientId ?? '';
-      requestOptions.headers['x-aslToken'] = TFS().portalToken ?? '';
+      requestOptions.headers['X-SubAccountID'] = TFS().clientId ?? '';
+      requestOptions.headers['X-AuthToken'] = TFS().portalToken ?? '';
       requestOptions.headers['x-api-encryption-key'] = encryptRsa(
         TFS().secretKey ?? "",
         TFS().publicKey ?? "",
