@@ -10,7 +10,7 @@ enum Client { tradeable, axis }
 
 class TFS {
   late String baseUrl;
-  final Client _client = Client.tradeable;
+  final Client _client = Client.axis;
   String? _authorization;
   String? _portalToken;
   String? _appId;
@@ -57,12 +57,13 @@ class TFS {
     }
   }
 
-  void registerApp(
-      {required String authorization,
-      required String portalToken,
-      required String appId,
-      required String clientId,
-      required String publicKey}) {
+  void registerApp({
+    required String authorization,
+    required String portalToken,
+    required String appId,
+    required String clientId,
+    required String publicKey,
+  }) {
     _authorization = authorization;
     _portalToken = portalToken;
     _appId = appId;
