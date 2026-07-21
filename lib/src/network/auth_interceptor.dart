@@ -39,15 +39,16 @@ class AuthInterceptor extends Interceptor {
             jsonEncode(options.data),
           );
           options.data = {'payload': encryptedData};
-          // log('Encrypted request body: $encryptedData');
+          log('Encrypted request body: $encryptedData');
         } catch (e) {
-          // log('Failed to encrypt request body: $e');
+          log('Failed to encrypt request body: $e');
         }
       }
     }
-    // log('...',
-    //     name:
-    //         "Auth Interceptor from Request ${options.baseUrl}${options.path}");
+    log(
+      '...',
+      name: "Auth Interceptor from Request ${options.baseUrl}${options.path}",
+    );
     super.onRequest(options, handler);
   }
 
@@ -96,9 +97,11 @@ class AuthInterceptor extends Interceptor {
       // Retry the request
       try {
         final dio = Dio();
-        // log('...',
-        //     name:
-        //         "Auth Interceptor from Retry ${requestOptions.baseUrl}${requestOptions.path}");
+        log(
+          '...',
+          name:
+              "Auth Interceptor from Retry ${requestOptions.baseUrl}${requestOptions.path}",
+        );
         final response = await dio.fetch(requestOptions);
         String data = await decryptData(
           TFS().secretKey!,
@@ -108,8 +111,10 @@ class AuthInterceptor extends Interceptor {
         response.data = dataJson;
         handler.resolve(response);
       } catch (e) {
-        // log((e as DioException).response.toString(),
-        //     name: "Auth Interceptor from Retry");
+        log(
+          (e as DioException).response.toString(),
+          name: "Auth Interceptor from Retry",
+        );
         handler.next(DioException(requestOptions: requestOptions, error: e));
       }
     } else {
