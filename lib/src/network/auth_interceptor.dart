@@ -12,21 +12,33 @@ class AuthInterceptor extends Interceptor {
     RequestInterceptorHandler handler,
   ) async {
     final portalToken = TFS().portalToken;
+    print(
+      'AuthInterceptor: onRequest called with portalToken: $portalToken ${TFS().client}',
+    );
+
+    print("${options.method} ${options.baseUrl}${options.path}");
+
     if (portalToken != null) {
       options.headers['Authorization'] = TFS().authorization ?? '';
       options.headers['x-api-client-id'] = TFS().appId ?? '';
       options.headers['X-SubAccountID'] = TFS().clientId ?? '';
       options.headers['X-AuthToken'] = TFS().portalToken ?? '';
-      options.headers['x-api-encryption-key'] = encryptRsa(
-        TFS().secretKey ?? "",
-        TFS().publicKey ?? "",
-      );
+      try {
+        options.headers['x-api-encryption-key'] = encryptRsa(
+          TFS().secretKey ?? "",
+          TFS().publicKey ?? "",
+        );
+      } catch (e) {
+        print('Failed to generate RSA encryption key: $e');
+      }
       options.headers['x-axis-token'] = TFS().portalToken ?? '';
       options.headers['x-axis-app-id'] = TFS().appId ?? '';
       options.headers['x-axis-client-id'] = TFS().clientId ?? '';
       options.headers['Content-Type'] = 'application/json';
       options.headers['Accept'] = 'application/json';
     }
+
+    print("${options.headers}");
 
     if (TFS().publicKey != null &&
         (options.method == 'POST' ||
@@ -39,39 +51,31 @@ class AuthInterceptor extends Interceptor {
             jsonEncode(options.data),
           );
           options.data = {'payload': encryptedData};
-          log('Encrypted request body: $encryptedData');
+          print('Encrypted request body: $encryptedData');
         } catch (e) {
-          log('Failed to encrypt request body: $e');
+          print('Failed to encrypt request body: $e');
         }
       }
     }
-    log(
-      '...',
-      name: "Auth Interceptor from Request ${options.baseUrl}${options.path}",
-    );
+
     super.onRequest(options, handler);
   }
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
-    log(
-      err.response?.toString() ?? "null body",
-      name:
-          "Auth Interceptor from Error ${err.requestOptions.baseUrl}${err.requestOptions.path}",
-    );
+    print(err.response?.toString() ?? "null body");
+
     if (err.response?.statusCode == 401 ||
         err.response?.statusCode == 403 ||
         err.response?.statusCode == 400) {
-      // Notify TFS about token expiration
       await TFS().onTokenExpired();
 
-      // Store the failed request for retry
       final requestOptions = err.requestOptions;
 
-      // Wait for new token and retry
       _retryWithNewToken(requestOptions, handler);
       return;
     }
+
     super.onError(err, handler);
   }
 
@@ -84,41 +88,38 @@ class AuthInterceptor extends Interceptor {
       requestOptions.headers['x-api-client-id'] = TFS().appId ?? '';
       requestOptions.headers['X-SubAccountID'] = TFS().clientId ?? '';
       requestOptions.headers['X-AuthToken'] = TFS().portalToken ?? '';
-      requestOptions.headers['x-api-encryption-key'] = encryptRsa(
-        TFS().secretKey ?? "",
-        TFS().publicKey ?? "",
-      );
+      try {
+        requestOptions.headers['x-api-encryption-key'] = encryptRsa(
+          TFS().secretKey ?? "",
+          TFS().publicKey ?? "",
+        );
+      } catch (e) {
+        print('Failed to generate RSA encryption key on retry: $e');
+      }
       requestOptions.headers['x-axis-token'] = TFS().portalToken ?? '';
       requestOptions.headers['x-axis-app-id'] = TFS().appId ?? '';
       requestOptions.headers['x-axis-client-id'] = TFS().clientId ?? '';
       requestOptions.headers['Content-Type'] = 'application/json';
       requestOptions.headers['Accept'] = 'application/json';
 
-      // Retry the request
       try {
         final dio = Dio();
-        log(
-          '...',
-          name:
-              "Auth Interceptor from Retry ${requestOptions.baseUrl}${requestOptions.path}",
-        );
+
         final response = await dio.fetch(requestOptions);
+
         String data = await decryptData(
           TFS().secretKey!,
           response.data['data']['payload'],
         );
         var dataJson = jsonDecode(data);
         response.data = dataJson;
+
         handler.resolve(response);
       } catch (e) {
-        log(
-          (e as DioException).response.toString(),
-          name: "Auth Interceptor from Retry",
-        );
+        print(e is DioException ? (e.response?.toString() ?? 'null') : '$e');
         handler.next(DioException(requestOptions: requestOptions, error: e));
       }
     } else {
-      //No new token available, pass the original error
       handler.next(
         DioException(
           requestOptions: requestOptions,
@@ -136,6 +137,7 @@ class AuthInterceptor extends Interceptor {
     );
     var dataJson = jsonDecode(data);
     response.data = dataJson;
+
     super.onResponse(response, handler);
   }
 }

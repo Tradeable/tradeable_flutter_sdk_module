@@ -7,10 +7,17 @@ import 'package:tradeable_flutter_sdk/src/network/tradeable_auth_interceptor.dar
 import 'package:tradeable_flutter_sdk/tradeable_flutter_sdk.dart';
 
 class API {
-  Dio dio = Dio(BaseOptions(baseUrl: TFS().baseUrl))
-    ..interceptors.add(TFS().client == Client.axis
-        ? AuthInterceptor()
-        : TradeableAuthInterceptor());
+  Dio? _dio;
+
+  Dio get dio {
+    _dio ??= Dio(BaseOptions(baseUrl: TFS().baseUrl))
+      ..interceptors.add(
+        TFS().client == Client.axis
+            ? AuthInterceptor()
+            : TradeableAuthInterceptor(),
+      );
+    return _dio!;
+  }
 
   Future<List<Topic>> fetchTopicByTagId(int tagId) async {
     Response response = await dio.get(
@@ -22,8 +29,11 @@ class API {
         .toList();
   }
 
-  Future<Topic> fetchTopicById(int topicId,
-      {int? topicTagId, int? moduleId}) async {
+  Future<Topic> fetchTopicById(
+    int topicId, {
+    int? topicTagId,
+    int? moduleId,
+  }) async {
     Map<String, int> queryParma = {};
     if (topicTagId != null) queryParma['topic_tag_id'] = topicTagId;
     if (moduleId != null) queryParma['module_id'] = moduleId;
@@ -47,44 +57,48 @@ class API {
   }
 
   Future<List<CoursesModel>> getModules() async {
-    Response response = await dio.get(
-      "/v0/sdk/modules",
-    );
+    Response response = await dio.get("/v0/sdk/modules");
     return (response.data['data'] as List)
         .map((e) => CoursesModel.fromJson(e))
         .toList();
   }
 
   Future<List<CourseProgressModel>> getCourseProgress() async {
-    Response response = await dio.get(
-      "/v0/sdk/modules/recent_progress",
-    );
+    Response response = await dio.get("/v0/sdk/modules/recent_progress");
     return (response.data['data'] as List)
         .map((e) => CourseProgressModel.fromJson(e))
         .toList();
   }
 
   Future<CoursesModel> getTopicsInCourse(int moduleId) async {
-    Response response = await dio.get(
-      "/v0/sdk/modules/$moduleId",
-    );
+    Response response = await dio.get("/v0/sdk/modules/$moduleId");
 
     return CoursesModel.fromJson(response.data['data']);
   }
 
-  Future<FlowModel> fetchFlowById(int flowId,
-      {int? moduleId, int? topicId, int? topicTagId}) async {
+  Future<FlowModel> fetchFlowById(
+    int flowId, {
+    int? moduleId,
+    int? topicId,
+    int? topicTagId,
+  }) async {
     Map<String, int> queryParam = {};
     if (topicId != null) queryParam['topic_id'] = topicId;
     if (topicTagId != null) queryParam['topic_tag_id'] = topicTagId;
     if (moduleId != null) queryParam['module_id'] = moduleId;
-    Response response =
-        await dio.get("/v0/sdk/flows/$flowId", queryParameters: queryParam);
+    Response response = await dio.get(
+      "/v0/sdk/flows/$flowId",
+      queryParameters: queryParam,
+    );
     return FlowModel.fromJson(response.data['data']);
   }
 
   Future<Map<String, String>> markFlowAsCompleted(
-      int flowId, int? topicId, int? topicTagId, int? moduleId) async {
+    int flowId,
+    int? topicId,
+    int? topicTagId,
+    int? moduleId,
+  ) async {
     // Map<String, int> queryParam = {};
     // if (topicId != null) queryParam['topicId'] = topicId;
     // if (topicTagId != null) queryParam['topicTagId'] = topicTagId;
