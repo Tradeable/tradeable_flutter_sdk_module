@@ -65,6 +65,7 @@ class _MyAppState extends State<MyApp> {
 
         return MaterialApp(
           navigatorKey: _navigatorKey,
+          debugShowCheckedModeBanner: false,
           home: Scaffold(
             backgroundColor:
                 state.mode == 'fullscreen' ? Colors.white : Colors.transparent,
