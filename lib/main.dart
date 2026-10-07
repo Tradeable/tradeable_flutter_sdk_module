@@ -9,6 +9,25 @@ import 'package:tradeable_flutter_sdk/tradeable_flutter_sdk.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   FlutterBridge().initialize();
+
+  TFS().initialize(
+    baseUrl: "",
+    theme: WidgetsBinding.instance.platformDispatcher.platformBrightness ==
+            Brightness.dark
+        ? AppTheme.darkTheme()
+        : AppTheme.lightTheme(),
+    onEvent: (String eventName, Map<String, dynamic>? data) {
+      // print("Event triggered : $eventName with data: $data");
+    },
+    onTokenExpiration: () async {
+      // TFS().registerApp(
+      //     authorization: "",
+      //     portalToken: "",
+      //     appId: "",
+      //     clientId: "",
+      //     publicKey: "");
+    },
+  );
   runApp(const MyApp());
 }
 

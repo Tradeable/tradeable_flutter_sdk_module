@@ -7,7 +7,6 @@ enum PageId {
   axisFundamentals,
   axisOrderType,
   axisMiscellaneous,
-  demo,
   axisFuture,
 }
 
@@ -21,7 +20,6 @@ extension PageIdValue on PageId {
     PageId.axisFundamentals: 10,
     PageId.axisOrderType: 13,
     PageId.axisMiscellaneous: 14,
-    PageId.demo: 15,
     PageId.axisFuture: 17,
   };
 

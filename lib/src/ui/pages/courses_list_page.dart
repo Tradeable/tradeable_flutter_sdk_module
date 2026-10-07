@@ -72,11 +72,13 @@ class _CoursesListScreen extends State<CoursesListPage> {
                           ),
                           itemBuilder: (context, index) {
                             final item = courses[index];
-                            int totalPercent = ((item.progress.completed /
-                                        item.progress.total) *
-                                    100)
-                                .ceil()
-                                .toInt();
+                            final progressRatio = item.progress.total == 0
+                                ? 0.0
+                                : (item.progress.completed /
+                                        item.progress.total)
+                                    .clamp(0.0, 1.0);
+                            int totalPercent =
+                                (progressRatio * 100).round();
                             return InkWell(
                               onTap: () async {
                                 TFS().onEvent(
@@ -139,11 +141,9 @@ class _CoursesListScreen extends State<CoursesListPage> {
                                                             BorderRadius
                                                                 .circular(10),
                                                         child:
-                                                            LinearProgressIndicator(
-                                                          value: ((item.progress
-                                                                  .completed /
-                                                              item.progress
-                                                                  .total)),
+                                                             LinearProgressIndicator(
+                                                           value:
+                                                               progressRatio,
                                                           backgroundColor: colors
                                                               .cardColorSecondary,
                                                           valueColor:
@@ -166,19 +166,15 @@ class _CoursesListScreen extends State<CoursesListPage> {
                                                   ],
                                                 )
                                               : Text(
-                                                  totalPercent == 100
-                                                      ? "100% Complete"
-                                                      : item.description,
+                                                  item.description,
                                                   maxLines: 1,
                                                   overflow:
                                                       TextOverflow.ellipsis,
-                                                  style: totalPercent == 100
-                                                      ? textStyles.smallNormal
-                                                      : textStyles.smallNormal
-                                                          .copyWith(
-                                                              fontSize: 12,
-                                                              color: colors
-                                                                  .textColorSecondary),
+                                                  style: textStyles.smallNormal
+                                                      .copyWith(
+                                                          fontSize: 12,
+                                                          color: colors
+                                                              .textColorSecondary),
                                                 )
                                         ],
                                       ),
@@ -188,7 +184,7 @@ class _CoursesListScreen extends State<CoursesListPage> {
                                         totalPercent == 0
                                             ? "BEGIN"
                                             : totalPercent == 100
-                                                ? "REVIST"
+                                                ? "REVISIT"
                                                 : "CONTINUE",
                                         style: textStyles.smallBold.copyWith(
                                             fontSize: 12,

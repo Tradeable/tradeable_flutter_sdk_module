@@ -70,7 +70,9 @@ class _UserActivityScreen extends State<UserActivityScreen> {
     inProgressItems = [];
     completedItems = [];
     for (final i in progressItems) {
-      final percent = (i.progress.completed / i.progress.total) * 100;
+      final percent = i.progress.total == 0
+          ? 0.0
+          : (i.progress.completed / i.progress.total).clamp(0.0, 1.0) * 100;
       if (percent == 100) {
         completedItems.add(i);
       } else {

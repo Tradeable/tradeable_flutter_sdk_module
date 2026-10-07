@@ -89,10 +89,13 @@ class _CourseDetailsScreen extends State<CourseDetailsPage> {
                             data: {
                               "courseTitle": coursesModel!.name,
                               "topicTitle": item.name,
-                              "progress": ((item.progress.completed /
-                                          item.progress.total) *
-                                      100)
-                                  .ceil()
+                              "progress": (item.progress.total == 0
+                                      ? 0
+                                      : ((item.progress.completed /
+                                                  item.progress.total)
+                                              .clamp(0.0, 1.0) *
+                                          100))
+                                  .round()
                                   .toStringAsFixed(0),
                             },
                           );
