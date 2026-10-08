@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'tradeable_flutter_sdk'
-  s.version          = '1.0.3'
+  s.version          = '1.0.4'
   s.summary          = 'Tradeable Flutter SDK Module'
   s.description      = 'Flutter module for Tradeable SDK that can be embedded in iOS apps'
   s.homepage         = 'https://github.com/deepakgrandhi/tradeable_flutter_sdk_module'
