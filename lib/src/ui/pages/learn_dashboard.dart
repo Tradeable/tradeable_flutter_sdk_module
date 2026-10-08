@@ -75,6 +75,7 @@ class _LearnDashboard extends State<LearnDashboard> {
                   CoursesHorizontalList(courses: courses),
                   const SizedBox(height: 20),
                   TopicTagWidget(),
+                  const SizedBox(height: 20),
                 ],
               ),
             ),

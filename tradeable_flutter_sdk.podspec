@@ -1,12 +1,12 @@
 Pod::Spec.new do |s|
   s.name             = 'tradeable_flutter_sdk'
-  s.version          = '0.0.1'
+  s.version          = '1.0.2'
   s.summary          = 'Tradeable Flutter SDK Module'
   s.description      = 'Flutter module for Tradeable SDK that can be embedded in iOS apps'
   s.homepage         = 'https://github.com/deepakgrandhi/tradeable_flutter_sdk_module'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { 'Deepak' => 'deepakgrandhi@gmail.com' }
-  s.source           = { :git => 'https://github.com/deepakgrandhi/tradeable_flutter_sdk_module.git', :tag => s.version.to_s }
+  s.source           = { :git => 'https://github.com/Tradeable/tradeable_flutter_sdk_module.git', :tag => s.version.to_s }
 
   s.ios.deployment_target = '12.0'
   

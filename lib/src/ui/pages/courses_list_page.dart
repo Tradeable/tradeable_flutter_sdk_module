@@ -23,12 +23,7 @@ class _CoursesListScreen extends State<CoursesListPage> {
   @override
   void initState() {
     TFS().onEvent(eventName: AppEvents.viewAllCourses, data: {});
-    if (widget.courses.isEmpty) {
-      getModules();
-    } else {
-      courses = widget.courses;
-      isLoading = false;
-    }
+    getModules();
     super.initState();
   }
 
